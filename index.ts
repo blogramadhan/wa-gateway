@@ -1,13 +1,18 @@
 import { Client, LocalAuth, MessageMedia } from 'whatsapp-web.js';
-import express from 'express';
-import cors from 'cors';
+import { Hono } from 'hono';
+import { cors } from 'hono/cors';
+import { logger } from 'hono/logger';
 import qrcode from 'qrcode-terminal';
+import { writeFileSync } from 'fs';
+import { join } from 'path';
 
 // Load environment variables
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 5000;
 const WEBHOOK_URL = process.env.WEBHOOK_URL || `http://localhost:${PORT}/webhook`;
 const SESSION_NAME = process.env.SESSION_NAME || 'wa-gateway-session';
 const DEBUG = process.env.DEBUG === 'true';
+const SHOW_QR_TERMINAL = process.env.SHOW_QR_TERMINAL !== 'false'; // Default true
+const QR_SAVE_PATH = process.env.QR_SAVE_PATH || './qr-code.txt';
 
 // Interfaces
 interface SendMessageRequest {
@@ -32,22 +37,29 @@ interface WebhookMessage {
 // WhatsApp Gateway Class
 class WhatsAppGateway {
   private client!: Client;
-  private app: express.Application;
+  private app: Hono;
   private isReady: boolean = false;
   private qrCode: string = '';
   private port: number;
 
   constructor(port?: number) {
     this.port = port || PORT;
-    this.app = express();
-    this.setupExpress();
+    this.app = new Hono();
+    this.setupHono();
     this.initializeWhatsAppClient();
   }
 
-  private setupExpress(): void {
-    this.app.use(cors());
-    this.app.use(express.json({ limit: '50mb' }));
-    this.app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+  private setupHono(): void {
+    // Middleware
+    this.app.use('*', cors({
+      origin: '*',
+      allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowHeaders: ['Content-Type', 'Authorization'],
+    }));
+    
+    if (DEBUG) {
+      this.app.use('*', logger());
+    }
 
     // Routes
     this.setupRoutes();
@@ -79,10 +91,53 @@ class WhatsAppGateway {
   private setupWhatsAppEvents(): void {
     this.client.on('qr', (qr) => {
       console.log('📱 QR Code diterima, scan dengan WhatsApp Anda:');
-      if (DEBUG) {
+      console.log('');
+      
+      // Always show QR in terminal unless explicitly disabled
+      if (SHOW_QR_TERMINAL) {
+        console.log('🔳 QR Code (scan dengan WhatsApp di ponsel Anda):');
+        console.log('');
         qrcode.generate(qr, { small: true });
+        console.log('');
       }
+
+      // Save QR code to file for SSH access
+      try {
+        const qrFilePath = join(process.cwd(), QR_SAVE_PATH);
+        const qrContent = `WhatsApp Gateway QR Code
+Generated: ${new Date().toISOString()}
+Server: http://localhost:${this.port}
+
+QR Code String:
+${qr}
+
+Instructions:
+1. Open WhatsApp di ponsel Anda
+2. Pilih "Linked Devices" atau "WhatsApp Web"
+3. Scan QR code di atas
+4. Gateway akan terhubung secara otomatis
+
+API Endpoints setelah terhubung:
+- Status: http://localhost:${this.port}/status
+- Send Message: http://localhost:${this.port}/send-message
+- Health: http://localhost:${this.port}/health
+`;
+        
+        writeFileSync(qrFilePath, qrContent);
+        console.log(`💾 QR Code disimpan ke: ${qrFilePath}`);
+        console.log(`📋 Untuk SSH: cat ${QR_SAVE_PATH}`);
+        console.log('');
+      } catch (error) {
+        console.error('❌ Error menyimpan QR code ke file:', error);
+      }
+
+      // Store QR for API endpoint
       this.qrCode = qr;
+      
+      console.log('🌐 Alternatif: Akses QR code via API:');
+      console.log(`   GET http://localhost:${this.port}/qr`);
+      console.log(`   GET http://localhost:${this.port}/qr/terminal`);
+      console.log('');
     });
 
     this.client.on('ready', () => {
@@ -139,8 +194,8 @@ class WhatsAppGateway {
 
   private setupRoutes(): void {
     // Health check
-    this.app.get('/health', (req, res) => {
-      res.json({
+    this.app.get('/health', (c) => {
+      return c.json({
         status: 'ok',
         whatsapp_ready: this.isReady,
         timestamp: new Date().toISOString()
@@ -148,30 +203,107 @@ class WhatsAppGateway {
     });
 
     // Get QR Code
-    this.app.get('/qr', (req, res) => {
+    this.app.get('/qr', (c) => {
       if (this.isReady) {
-        return res.json({
+        return c.json({
           success: false,
           message: 'WhatsApp sudah terhubung'
         });
       }
 
       if (!this.qrCode) {
-        return res.json({
+        return c.json({
           success: false,
           message: 'QR Code belum tersedia, tunggu sebentar...'
         });
       }
 
-      res.json({
+      return c.json({
         success: true,
-        qr_code: this.qrCode
+        qr_code: this.qrCode,
+        instructions: {
+          web: `Akses http://localhost:${this.port}/qr/terminal untuk QR terminal`,
+          file: `Jalankan: cat ${QR_SAVE_PATH}`,
+          ssh: 'Untuk SSH, gunakan endpoint /qr/terminal'
+        }
       });
     });
 
+    // Get QR Code as terminal display
+    this.app.get('/qr/terminal', (c) => {
+      if (this.isReady) {
+        return c.text(`WhatsApp Gateway - Already Connected
+
+✅ Status: Connected
+🕒 Connected at: ${new Date().toISOString()}
+🔗 Base URL: http://localhost:${this.port}
+
+API Endpoints:
+- GET  /status              - Connection status
+- GET  /chats               - Get chat list  
+- POST /send-message        - Send message
+- POST /send-group-message  - Send group message
+- POST /logout              - Logout WhatsApp
+`);
+      }
+
+      if (!this.qrCode) {
+        return c.text(`WhatsApp Gateway - QR Code Loading
+
+⏳ Status: Generating QR Code...
+🕒 Time: ${new Date().toISOString()}
+
+Please wait a moment for QR code to be generated.
+Refresh this page in a few seconds.
+`);
+      }
+
+      // Generate QR code as ASCII art for terminal
+      let qrTerminal = '';
+      try {
+        // Capture qrcode-terminal output
+        const originalLog = console.log;
+        const logs: string[] = [];
+        console.log = (...args) => {
+          logs.push(args.join(' '));
+        };
+        
+        qrcode.generate(this.qrCode, { small: true });
+        console.log = originalLog;
+        qrTerminal = logs.join('\n');
+      } catch (error) {
+        qrTerminal = 'Error generating terminal QR code';
+      }
+
+      const response = `WhatsApp Gateway - QR Code
+
+📱 Scan dengan WhatsApp di ponsel Anda
+🕒 Generated: ${new Date().toISOString()}
+🔗 Server: http://localhost:${this.port}
+
+${qrTerminal}
+
+📋 Instructions:
+1. Open WhatsApp di ponsel Anda
+2. Pilih "Linked Devices" atau "WhatsApp Web"  
+3. Scan QR code di atas
+4. Gateway akan terhubung secara otomatis
+
+🌐 API Endpoints setelah terhubung:
+- GET  http://localhost:${this.port}/status
+- POST http://localhost:${this.port}/send-message
+- GET  http://localhost:${this.port}/chats
+
+💡 Tips untuk SSH:
+curl http://localhost:${this.port}/qr/terminal
+`;
+
+      return c.text(response);
+    });
+
     // Check connection status
-    this.app.get('/status', (req, res) => {
-      res.json({
+    this.app.get('/status', (c) => {
+      return c.json({
         connected: this.isReady,
         status: this.isReady ? 'connected' : 'disconnected',
         timestamp: new Date().toISOString()
@@ -179,22 +311,23 @@ class WhatsAppGateway {
     });
 
     // Send message
-    this.app.post('/send-message', async (req, res) => {
+    this.app.post('/send-message', async (c) => {
       try {
         if (!this.isReady) {
-          return res.status(400).json({
+          return c.json({
             success: false,
             message: 'WhatsApp belum terhubung'
-          });
+          }, 400);
         }
 
-        const { number, message, media }: SendMessageRequest = req.body;
+        const body: SendMessageRequest = await c.req.json();
+        const { number, message, media } = body;
 
         if (!number || !message) {
-          return res.status(400).json({
+          return c.json({
             success: false,
             message: 'Parameter number dan message harus diisi'
-          });
+          }, 400);
         }
 
         // Format nomor (tambahkan @c.us jika belum ada)
@@ -212,7 +345,7 @@ class WhatsAppGateway {
 
         console.log('✅ Pesan terkirim ke:', number);
 
-        res.json({
+        return c.json({
           success: true,
           message: 'Pesan berhasil dikirim',
           message_id: result.id.id,
@@ -221,38 +354,38 @@ class WhatsAppGateway {
 
       } catch (error) {
         console.error('❌ Error mengirim pesan:', error);
-        res.status(500).json({
+        return c.json({
           success: false,
           message: 'Gagal mengirim pesan',
           error: error instanceof Error ? error.message : 'Unknown error'
-        });
+        }, 500);
       }
     });
 
     // Send message to group
-    this.app.post('/send-group-message', async (req, res) => {
+    this.app.post('/send-group-message', async (c) => {
       try {
         if (!this.isReady) {
-          return res.status(400).json({
+          return c.json({
             success: false,
             message: 'WhatsApp belum terhubung'
-          });
+          }, 400);
         }
 
-        const { group_id, message } = req.body;
+        const { group_id, message } = await c.req.json();
 
         if (!group_id || !message) {
-          return res.status(400).json({
+          return c.json({
             success: false,
             message: 'Parameter group_id dan message harus diisi'
-          });
+          }, 400);
         }
 
         const result = await this.client.sendMessage(group_id, message);
 
         console.log('✅ Pesan grup terkirim ke:', group_id);
 
-        res.json({
+        return c.json({
           success: true,
           message: 'Pesan grup berhasil dikirim',
           message_id: result.id.id,
@@ -261,22 +394,22 @@ class WhatsAppGateway {
 
       } catch (error) {
         console.error('❌ Error mengirim pesan grup:', error);
-        res.status(500).json({
+        return c.json({
           success: false,
           message: 'Gagal mengirim pesan grup',
           error: error instanceof Error ? error.message : 'Unknown error'
-        });
+        }, 500);
       }
     });
 
     // Get chats
-    this.app.get('/chats', async (req, res) => {
+    this.app.get('/chats', async (c) => {
       try {
         if (!this.isReady) {
-          return res.status(400).json({
+          return c.json({
             success: false,
             message: 'WhatsApp belum terhubung'
-          });
+          }, 400);
         }
 
         const chats = await this.client.getChats();
@@ -292,7 +425,7 @@ class WhatsAppGateway {
           } : null
         }));
 
-        res.json({
+        return c.json({
           success: true,
           chats: chatList,
           total: chatList.length
@@ -300,55 +433,61 @@ class WhatsAppGateway {
 
       } catch (error) {
         console.error('❌ Error mendapatkan daftar chat:', error);
-        res.status(500).json({
+        return c.json({
           success: false,
           message: 'Gagal mendapatkan daftar chat',
           error: error instanceof Error ? error.message : 'Unknown error'
-        });
+        }, 500);
       }
     });
 
     // Logout/Disconnect
-    this.app.post('/logout', async (req, res) => {
+    this.app.post('/logout', async (c) => {
       try {
         await this.client.logout();
         this.isReady = false;
         
-        res.json({
+        return c.json({
           success: true,
           message: 'Berhasil logout dari WhatsApp'
         });
 
       } catch (error) {
         console.error('❌ Error logout:', error);
-        res.status(500).json({
+        return c.json({
           success: false,
           message: 'Gagal logout',
           error: error instanceof Error ? error.message : 'Unknown error'
-        });
+        }, 500);
       }
     });
 
     // Webhook endpoint untuk menerima pesan masuk
-    this.app.post('/webhook', (req, res) => {
-      console.log('🔔 Webhook dipanggil:', req.body);
-      res.json({ received: true });
+    this.app.post('/webhook', async (c) => {
+      const body = await c.req.json();
+      console.log('🔔 Webhook dipanggil:', body);
+      return c.json({ received: true });
     });
   }
 
   public start(): void {
-    this.app.listen(this.port, () => {
-      console.log(`🚀 WhatsApp Gateway berjalan di port ${this.port}`);
-      console.log(`📖 API Documentation:`);
-      console.log(`   GET  /health              - Health check`);
-      console.log(`   GET  /status              - Connection status`);
-      console.log(`   GET  /qr                  - Get QR code`);
-      console.log(`   GET  /chats               - Get chat list`);
-      console.log(`   POST /send-message        - Send message`);
-      console.log(`   POST /send-group-message  - Send group message`);
-      console.log(`   POST /logout              - Logout WhatsApp`);
-      console.log(`   POST /webhook             - Webhook endpoint`);
-      console.log(`\n🔗 Base URL: http://localhost:${this.port}`);
+    console.log(`🚀 WhatsApp Gateway berjalan di port ${this.port}`);
+    console.log(`📖 API Documentation:`);
+    console.log(`   GET  /health              - Health check`);
+    console.log(`   GET  /status              - Connection status`);
+    console.log(`   GET  /qr                  - Get QR code`);
+    console.log(`   GET  /qr/terminal         - Get QR code (terminal)`);
+    console.log(`   GET  /chats               - Get chat list`);
+    console.log(`   POST /send-message        - Send message`);
+    console.log(`   POST /send-group-message  - Send group message`);
+    console.log(`   POST /logout              - Logout WhatsApp`);
+    console.log(`   POST /webhook             - Webhook endpoint`);
+    console.log(`\n🔗 Base URL: http://localhost:${this.port}`);
+
+    // Start Bun server
+    Bun.serve({
+      port: this.port,
+      fetch: this.app.fetch,
     });
   }
 }
@@ -363,3 +502,11 @@ console.log(`   PORT: ${PORT}`);
 console.log(`   WEBHOOK_URL: ${WEBHOOK_URL}`);
 console.log(`   SESSION_NAME: ${SESSION_NAME}`);
 console.log(`   DEBUG: ${DEBUG}`);
+console.log(`   SHOW_QR_TERMINAL: ${SHOW_QR_TERMINAL}`);
+console.log(`   QR_SAVE_PATH: ${QR_SAVE_PATH}`);
+console.log('');
+console.log('📱 QR Code Access Methods:');
+console.log(`   📺 Terminal: QR akan ditampilkan di console ini`);
+console.log(`   📄 File: cat ${QR_SAVE_PATH}`);
+console.log(`   🌐 API: curl http://localhost:${PORT}/qr/terminal`);
+console.log(`   🔗 Web: http://localhost:${PORT}/qr`);

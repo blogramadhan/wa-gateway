@@ -1,7 +1,7 @@
 {
   "name": "wa-gateway",
   "version": "1.0.0",
-  "description": "WhatsApp Gateway menggunakan Bun.js dan whatsapp-web.js",
+  "description": "WhatsApp Gateway menggunakan Bun.js, Hono, dan whatsapp-web.js",
   "module": "index.ts",
   "type": "module",
   "private": true,
@@ -22,22 +22,19 @@
     "compose:dev:down": "docker-compose -f docker-compose.dev.yml down",
     "compose:dev:logs": "docker-compose -f docker-compose.dev.yml logs -f"
   },
-  "keywords": ["whatsapp", "gateway", "api", "bun", "typescript"],
+  "keywords": ["whatsapp", "gateway", "api", "bun", "hono", "typescript"],
   "author": "Your Name",
   "license": "MIT",
   "devDependencies": {
     "@types/bun": "latest",
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.3",
     "@types/qrcode-terminal": "^0.12.2"
   },
   "peerDependencies": {
     "typescript": "^5"
   },
   "dependencies": {
-    "cors": "^2.8.5",
     "dotenv": "^17.2.2",
-    "express": "^5.1.0",
+    "hono": "^4.9.7",
     "qrcode-terminal": "^0.12.0",
     "whatsapp-web.js": "^1.34.1"
   }

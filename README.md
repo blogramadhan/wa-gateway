@@ -1,138 +1,206 @@
-# WhatsApp Gateway
+# 📱 WhatsApp Gateway
 
-WhatsApp Gateway yang dibangun dengan Bun.js dan whatsapp-web.js untuk mengirim dan menerima pesan WhatsApp melalui REST API.
+**WhatsApp Gateway yang mudah digunakan** - Kirim dan terima pesan WhatsApp melalui REST API menggunakan Bun.js, Hono, dan whatsapp-web.js.
 
-## 🚀 Fitur
+[![Bun](https://img.shields.io/badge/Bun-1.2.21-black?logo=bun)](https://bun.sh)
+[![Hono](https://img.shields.io/badge/Hono-4.9.7-orange?logo=hono)](https://hono.dev)
+[![Docker](https://img.shields.io/badge/Docker-Ready-blue?logo=docker)](https://docker.com)
 
-- ✅ Kirim pesan teks ke nomor individu
-- ✅ Kirim pesan ke grup WhatsApp
-- ✅ Kirim media (gambar, dokumen, dll)
-- ✅ Menerima pesan masuk (webhook)
-- ✅ QR Code untuk autentikasi
-- ✅ Status koneksi real-time
-- ✅ Daftar chat/konversasi
-- ✅ Logout/disconnect
+## 🚀 Quick Start (5 Menit)
 
-## 📋 Prasyarat
-
-### Untuk Manual Installation:
-- Node.js (atau Bun.js)
-- Google Chrome/Chromium (untuk Puppeteer)
-
-### Untuk Docker (Recommended):
-- Docker & Docker Compose
-- Minimal 1GB RAM available
-- Port 5000 tersedia (atau custom port)
-
-## 🛠️ Instalasi
-
-### Metode 1: Manual Installation
-
-1. Clone atau download project ini
-2. Install dependencies:
+### 1️⃣ Clone & Setup
 ```bash
-bun install
-```
-
-3. Jalankan aplikasi:
-```bash
-bun start
-```
-
-### Metode 2: Docker (Recommended)
-
-#### Menggunakan Setup Script (Paling Mudah)
-```bash
-# Clone project
 git clone <repository-url>
 cd wa-gateway
 
-# Optional: Set custom port
-export PORT=8080
-
-# Jalankan setup script (akan setup semua yang diperlukan)
-chmod +x setup.sh
+# Setup sekali saja
+chmod +x *.sh
 ./setup.sh
 ```
 
-#### Menggunakan Docker Compose Manual
+### 2️⃣ Lihat QR Code & Scan
 ```bash
-# Clone project
+# Lihat QR code di terminal
+./wa-gateway.sh qr
+
+# Atau lihat di browser
+# http://localhost:5000/qr
+```
+
+### 3️⃣ Kirim Pesan Pertama
+```bash
+curl -X POST http://localhost:5000/send-message \
+  -H "Content-Type: application/json" \
+  -d '{
+    "number": "6281234567890",
+    "message": "Halo dari WhatsApp Gateway!"
+  }'
+```
+
+**Selesai!** 🎉 Gateway Anda sudah siap digunakan.
+
+---
+
+## 📋 Daftar Isi
+
+- [🎯 Fitur](#-fitur)
+- [⚡ Instalasi](#-instalasi)
+- [🛠️ Penggunaan Sehari-hari](#️-penggunaan-sehari-hari)
+- [📚 API Documentation](#-api-documentation)
+- [🔐 SSH & Server Remote](#-ssh--server-remote)
+- [🔧 Konfigurasi](#-konfigurasi)
+- [🐛 Troubleshooting](#-troubleshooting)
+
+---
+
+## 🎯 Fitur
+
+- ✅ **Kirim pesan** ke nomor individu
+- ✅ **Kirim pesan ke grup** WhatsApp
+- ✅ **Kirim media** (gambar, dokumen, dll)
+- ✅ **Terima pesan** via webhook
+- ✅ **QR Code** untuk autentikasi
+- ✅ **SSH-friendly** - QR code di terminal
+- ✅ **Docker ready** - mudah deploy
+- ✅ **Environment variables** - fleksibel
+- ✅ **Session persistent** - tidak perlu scan ulang
+- ✅ **High performance** - Bun.js + Hono
+
+---
+
+## ⚡ Instalasi
+
+### Prasyarat
+- **Docker & Docker Compose** (Recommended)
+- **Atau Bun.js** untuk development
+
+### Pilihan Instalasi
+
+#### 🐳 Docker (Recommended)
+```bash
+# 1. Clone repository
 git clone <repository-url>
 cd wa-gateway
 
-# Copy environment file (optional)
-cp docker.env.example docker.env
-# Edit docker.env untuk custom konfigurasi
+# 2. Setup sekali saja (otomatis)
+chmod +x setup.sh
+./setup.sh
 
-# Jalankan dengan Docker Compose
-docker-compose up -d
-
-# Atau dengan custom port
-PORT=8080 docker-compose up -d
-
-# Lihat logs
-docker-compose logs -f
-
-# Stop aplikasi
-docker-compose down
+# ✅ Selesai! Gateway sudah berjalan
 ```
 
-#### Menggunakan Docker Manual
+#### 🔧 Manual (Development)
 ```bash
-# Build image
-docker build -t wa-gateway .
+# 1. Clone repository
+git clone <repository-url>
+cd wa-gateway
 
-# Jalankan container
-docker run -d -p 3000:3000 --name wa-gateway-container wa-gateway
+# 2. Install dependencies
+bun install
 
-# Lihat logs
-docker logs -f wa-gateway-container
+# 3. Jalankan
+bun start
+
+# 4. Lihat QR code di terminal dan scan
 ```
 
-### Setelah Instalasi
-4. Buka browser dan akses `http://localhost:5000/qr` untuk mendapatkan QR code
-5. Scan QR code dengan WhatsApp Anda
+---
 
-## 📚 API Endpoints
+## 🛠️ Penggunaan Sehari-hari
 
-### Health Check
+Setelah setup, gunakan script `wa-gateway.sh` untuk semua operasi:
+
+### Commands Dasar
+```bash
+# Lihat status
+./wa-gateway.sh status
+
+# Lihat QR code (untuk scan ulang)
+./wa-gateway.sh qr
+
+# Lihat logs real-time
+./wa-gateway.sh logs
+
+# Start/stop/restart
+./wa-gateway.sh start
+./wa-gateway.sh stop
+./wa-gateway.sh restart
+
+# Bantuan lengkap
+./wa-gateway.sh help
+```
+
+### Custom Port
+```bash
+# Jalankan di port lain
+./wa-gateway.sh start 8080
+
+# Lihat QR di port custom
+./wa-gateway.sh qr 8080
+```
+
+### Backup & Restore
+```bash
+# Backup session WhatsApp
+./wa-gateway.sh backup-session
+
+# Restore session
+./wa-gateway.sh restore-session backup-file.tar.gz
+```
+
+---
+
+## 📚 API Documentation
+
+### Base URL
+```
+http://localhost:5000
+```
+
+### Endpoints Utama
+
+#### 1. Health Check
 ```http
 GET /health
 ```
-Cek status aplikasi dan koneksi WhatsApp.
-
-### Status Koneksi
-```http
-GET /status
-```
-Cek status koneksi WhatsApp.
-
-### QR Code
-```http
-GET /qr
-```
-Mendapatkan QR code untuk autentikasi WhatsApp.
-
-### Kirim Pesan
-```http
-POST /send-message
-Content-Type: application/json
-
+**Response:**
+```json
 {
-  "number": "6281234567890",
-  "message": "Halo, ini pesan dari WhatsApp Gateway!"
+  "status": "ok",
+  "whatsapp_ready": true,
+  "timestamp": "2024-01-01T00:00:00.000Z"
 }
 ```
 
-### Kirim Pesan dengan Media
+#### 2. Kirim Pesan
 ```http
 POST /send-message
 Content-Type: application/json
 
 {
   "number": "6281234567890",
-  "message": "Ini gambar untuk Anda",
+  "message": "Halo dari WhatsApp Gateway!"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Pesan berhasil dikirim",
+  "message_id": "...",
+  "timestamp": "2024-01-01T00:00:00.000Z"
+}
+```
+
+#### 3. Kirim Pesan dengan Media
+```http
+POST /send-message
+Content-Type: application/json
+
+{
+  "number": "6281234567890",
+  "message": "Lihat gambar ini!",
   "media": {
     "data": "base64_encoded_data",
     "mimetype": "image/jpeg",
@@ -141,7 +209,7 @@ Content-Type: application/json
 }
 ```
 
-### Kirim Pesan Grup
+#### 4. Kirim Pesan Grup
 ```http
 POST /send-group-message
 Content-Type: application/json
@@ -152,57 +220,44 @@ Content-Type: application/json
 }
 ```
 
-### Daftar Chat
+#### 5. Get QR Code
+```http
+GET /qr                 # JSON format
+GET /qr/terminal        # Terminal format (untuk SSH)
+```
+
+#### 6. Daftar Chat
 ```http
 GET /chats
 ```
-Mendapatkan daftar semua chat/konversasi.
 
-### Logout
+#### 7. Status Koneksi
 ```http
-POST /logout
+GET /status
 ```
-Logout dari WhatsApp dan hapus sesi.
 
-### Webhook
-```http
-POST /webhook
-```
-Endpoint untuk menerima pesan masuk (dapat dikustomisasi).
+### Contoh Penggunaan
 
-## 💡 Contoh Penggunaan
-
-### Menggunakan cURL
-
-1. **Cek status:**
+#### cURL
 ```bash
+# Cek status
 curl http://localhost:5000/status
-```
 
-2. **Kirim pesan:**
-```bash
+# Kirim pesan
 curl -X POST http://localhost:5000/send-message \
   -H "Content-Type: application/json" \
-  -d '{
-    "number": "6281234567890",
-    "message": "Halo dari WhatsApp Gateway!"
-  }'
+  -d '{"number": "6281234567890", "message": "Test"}'
+
+# Get QR (SSH)
+curl http://localhost:5000/qr/terminal
 ```
 
-3. **Dapatkan QR code:**
-```bash
-curl http://localhost:5000/qr
-```
-
-### Menggunakan JavaScript/Fetch
-
+#### JavaScript/Fetch
 ```javascript
 // Kirim pesan
 const response = await fetch('http://localhost:5000/send-message', {
   method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
     number: '6281234567890',
     message: 'Halo dari JavaScript!'
@@ -213,56 +268,98 @@ const result = await response.json();
 console.log(result);
 ```
 
+#### Python
+```python
+import requests
+
+# Kirim pesan
+response = requests.post('http://localhost:5000/send-message', json={
+    'number': '6281234567890',
+    'message': 'Halo dari Python!'
+})
+
+print(response.json())
+```
+
+---
+
+## 🔐 SSH & Server Remote
+
+Untuk deployment di server remote, WhatsApp Gateway menyediakan beberapa cara untuk mendapatkan QR code:
+
+### 1. Terminal SSH (Recommended)
+```bash
+# SSH ke server
+ssh user@your-server.com
+
+# Lihat QR code
+./wa-gateway.sh qr
+
+# Atau lihat logs (QR akan muncul)
+./wa-gateway.sh logs
+```
+
+### 2. API Endpoint
+```bash
+# Via curl
+curl http://localhost:5000/qr/terminal
+
+# Via wget
+wget -qO- http://localhost:5000/qr/terminal
+```
+
+### 3. File QR Code
+```bash
+# QR otomatis disimpan ke file
+cat qr-code.txt
+```
+
+### 4. Port Forwarding
+```bash
+# Forward port dari server ke local
+ssh -L 5000:localhost:5000 user@server.com
+
+# Akses dari browser lokal
+http://localhost:5000/qr
+```
+
+### Tips Production Server
+1. **Firewall**: Buka port yang digunakan
+2. **SSL/HTTPS**: Gunakan reverse proxy (Nginx/Caddy)
+3. **Process Manager**: Gateway sudah auto-restart dengan Docker
+4. **Monitoring**: Health check di `/health`
+5. **Backup**: Backup session dengan `./wa-gateway.sh backup-session`
+
+---
+
 ## 🔧 Konfigurasi
 
 ### Environment Variables
 
-WhatsApp Gateway menggunakan environment variables untuk konfigurasi. Anda dapat mengatur konfigurasi dengan beberapa cara:
-
-#### 1. File Environment (.env)
+Buat file `docker.env` dari template:
 ```bash
-# Copy template dan edit
-cp docker.env.example .env
+cp docker.env.example docker.env
 ```
 
-Edit file `.env`:
+Edit file `docker.env`:
 ```bash
 # Server Configuration
 PORT=5000
-NODE_ENV=development
+NODE_ENV=production
 
 # WhatsApp Configuration
 SESSION_NAME=wa-gateway-session
 WEBHOOK_URL=http://localhost:5000/webhook
 
+# QR Code Configuration
+SHOW_QR_TERMINAL=true
+QR_SAVE_PATH=./qr-code.txt
+
 # Debug Configuration
-DEBUG=true
+DEBUG=false
 ```
 
-#### 2. Docker Environment
-```bash
-# Copy template untuk Docker
-cp docker.env.example docker.env
-```
-
-#### 3. System Environment Variables
-```bash
-# Set environment variables
-export PORT=6000
-export DEBUG=true
-export SESSION_NAME=my-wa-session
-
-# Jalankan aplikasi
-bun start
-```
-
-#### 4. Docker Compose dengan Custom Port
-```bash
-# Set port via environment variable
-PORT=8080 docker-compose up -d
-```
-
-### Available Environment Variables
+### Available Variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
@@ -270,140 +367,167 @@ PORT=8080 docker-compose up -d
 | `NODE_ENV` | `production` | Environment mode |
 | `SESSION_NAME` | `wa-gateway-session` | WhatsApp session name |
 | `WEBHOOK_URL` | `http://localhost:PORT/webhook` | Webhook URL |
-| `DEBUG` | `false` | Enable debug logging and console QR |
+| `SHOW_QR_TERMINAL` | `true` | Show QR in terminal |
+| `QR_SAVE_PATH` | `./qr-code.txt` | QR code file path |
+| `DEBUG` | `false` | Enable debug logging |
 
-## 📝 Format Nomor
-
-Format nomor yang didukung:
-- `6281234567890` (akan otomatis ditambahkan @c.us)
-- `6281234567890@c.us` (format lengkap)
-
-Untuk grup WhatsApp, gunakan format:
-- `1234567890-1234567890@g.us`
-
-## 🐳 Docker Commands
-
-### NPM Scripts untuk Docker
+### Custom Port
 ```bash
-# Docker manual commands
-npm run docker:build      # Build Docker image
-npm run docker:run        # Run container
-npm run docker:stop       # Stop container
-npm run docker:remove     # Remove container
-npm run docker:logs       # View logs
+# Via environment variable
+PORT=8080 ./wa-gateway.sh start
 
-# Docker Compose commands
-npm run compose:up         # Start dengan docker-compose
-npm run compose:down       # Stop docker-compose
-npm run compose:logs       # View compose logs
-npm run compose:restart    # Restart services
-npm run compose:build      # Rebuild images
+# Via script parameter
+./wa-gateway.sh start 8080
 ```
 
-### Docker Compose Features
-- ✅ Persistent session data (volume mounting)
-- ✅ Auto-restart policy
-- ✅ Health checks
-- ✅ Resource limits
-- ✅ Network isolation
-- ✅ Security optimizations
+### Format Nomor
+- **Individu**: `6281234567890` atau `6281234567890@c.us`
+- **Grup**: `1234567890-1234567890@g.us` (dapatkan dari `/chats`)
 
-### Quick Start dengan Makefile
-```bash
-# Lihat semua commands
-make help
-
-# Quick start (build + run)
-make quick-start
-
-# Development mode dengan hot reload
-make dev
-
-# View logs
-make logs
-
-# Stop aplikasi
-make stop
-```
-
-### Custom Port Examples
-```bash
-# Jalankan di port 8080
-PORT=8080 docker-compose up -d
-
-# Jalankan development di port 3000
-PORT=3000 DEBUG=true docker-compose -f docker-compose.dev.yml up -d
-
-# Jalankan manual dengan custom port
-PORT=9000 bun start
-```
-
-## ⚠️ Catatan Penting
-
-1. **Autentikasi**: Setelah pertama kali scan QR code, sesi akan tersimpan dan tidak perlu scan ulang
-2. **Rate Limiting**: WhatsApp memiliki batasan pengiriman pesan, jangan spam
-3. **Media**: File media harus di-encode dalam base64
-4. **Grup**: Untuk mendapatkan ID grup, gunakan endpoint `/chats`
+---
 
 ## 🐛 Troubleshooting
 
-### WhatsApp tidak terhubung
-- Pastikan Google Chrome/Chromium terinstall
-- Coba restart aplikasi
-- Hapus folder `.wwebjs_auth` dan scan QR code ulang
+### Gateway Tidak Bisa Start
 
-### Error saat kirim pesan
-- Pastikan nomor dalam format yang benar
-- Cek apakah WhatsApp masih terhubung dengan `/status`
-- Pastikan nomor tujuan terdaftar di WhatsApp
-
-### QR Code tidak muncul
-- Tunggu beberapa detik setelah aplikasi start
-- Refresh endpoint `/qr`
-- Cek log aplikasi untuk error
-
-### Docker Issues
-
-**Container tidak bisa start:**
+#### 1. Cek Docker
 ```bash
-# Cek logs container
-docker logs wa-gateway-container
-# atau
-docker-compose logs
+# Pastikan Docker berjalan
+docker info
 
-# Rebuild image jika ada perubahan
-docker-compose build --no-cache
+# Cek container
+./wa-gateway.sh status
 ```
 
-**Permission errors di Docker:**
-```bash
-# Pastikan user memiliki akses ke Docker
-sudo usermod -aG docker $USER
-# Logout dan login ulang
-
-# Atau jalankan dengan sudo
-sudo docker-compose up -d
-```
-
-**WhatsApp session hilang setelah restart:**
-- Session data sudah di-mount ke volume Docker
-- Data akan persist di volume `wa_session_data`
-- Cek volume: `docker volume ls`
-
-**Port sudah digunakan:**
+#### 2. Port Sudah Digunakan
 ```bash
 # Cek port yang digunakan
 sudo netstat -tulpn | grep :5000
 
-# Atau ubah port di docker-compose.yml
-ports:
-  - "6000:5000"  # Host port 6000, container port 5000
+# Gunakan port lain
+./wa-gateway.sh start 8080
 ```
 
-## 🤝 Kontribusi
+#### 3. Permission Error
+```bash
+# Fix permission
+sudo chmod +x wa-gateway.sh setup.sh
 
-Silakan buat issue atau pull request untuk perbaikan dan fitur baru.
+# Atau jalankan dengan sudo
+sudo ./wa-gateway.sh start
+```
 
-## 📄 Lisensi
+### QR Code Tidak Muncul
 
-MIT License - bebas digunakan untuk project pribadi dan komersial.
+#### 1. Tunggu Sebentar
+```bash
+# QR perlu waktu untuk generate
+./wa-gateway.sh logs
+
+# Atau coba lagi
+./wa-gateway.sh qr
+```
+
+#### 2. Cek File QR
+```bash
+# QR otomatis disimpan ke file
+cat qr-code.txt
+```
+
+#### 3. Browser Access
+```bash
+# Akses via browser
+http://localhost:5000/qr
+```
+
+### Pesan Tidak Terkirim
+
+#### 1. Cek Status Koneksi
+```bash
+curl http://localhost:5000/status
+```
+
+#### 2. Cek Format Nomor
+```bash
+# Pastikan format benar
+# ✅ Benar: "6281234567890"
+# ❌ Salah: "+62 812-3456-7890"
+```
+
+#### 3. Cek Logs
+```bash
+./wa-gateway.sh logs
+```
+
+### Session Hilang
+
+#### 1. Restore Backup
+```bash
+# Jika ada backup
+./wa-gateway.sh restore-session backup-file.tar.gz
+```
+
+#### 2. Scan Ulang
+```bash
+# Reset dan scan ulang
+./wa-gateway.sh restart
+./wa-gateway.sh qr
+```
+
+### Performance Issues
+
+#### 1. Restart Gateway
+```bash
+./wa-gateway.sh restart
+```
+
+#### 2. Clean Restart
+```bash
+./wa-gateway.sh stop
+./wa-gateway.sh start
+```
+
+#### 3. Update Gateway
+```bash
+./wa-gateway.sh update
+```
+
+### Bantuan Lebih Lanjut
+
+```bash
+# Lihat semua commands
+./wa-gateway.sh help
+
+# Lihat logs detail
+./wa-gateway.sh logs
+
+# Cek status lengkap
+./wa-gateway.sh status
+```
+
+---
+
+## 📞 Support
+
+- **Issues**: Buat issue di repository ini
+- **Documentation**: Lihat file `examples.http` untuk contoh API
+- **Script Help**: Jalankan `./wa-gateway.sh help`
+
+---
+
+## 📄 License
+
+MIT License - Bebas digunakan untuk project pribadi dan komersial.
+
+---
+
+## 🎉 Selamat!
+
+WhatsApp Gateway Anda sudah siap digunakan! 
+
+**Quick Commands:**
+- `./wa-gateway.sh qr` - Lihat QR code
+- `./wa-gateway.sh logs` - Lihat logs
+- `./wa-gateway.sh help` - Bantuan lengkap
+
+**Happy messaging!** 📱✨

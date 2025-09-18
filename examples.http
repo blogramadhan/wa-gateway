@@ -1,17 +1,24 @@
 ### WhatsApp Gateway API Examples
 ### Gunakan file ini dengan REST Client extension di VS Code
+### Atau copy-paste ke terminal dengan curl
+
+### Base URL
+@baseUrl = http://localhost:5000
 
 ### 1. Health Check
-GET http://localhost:5000/health
+GET {{baseUrl}}/health
 
 ### 2. Check Connection Status
-GET http://localhost:5000/status
+GET {{baseUrl}}/status
 
-### 3. Get QR Code
-GET http://localhost:5000/qr
+### 3. Get QR Code (JSON)
+GET {{baseUrl}}/qr
+
+### 3b. Get QR Code (Terminal/SSH) - Perfect for SSH
+GET {{baseUrl}}/qr/terminal
 
 ### 4. Send Text Message
-POST http://localhost:5000/send-message
+POST {{baseUrl}}/send-message
 Content-Type: application/json
 
 {
@@ -19,8 +26,13 @@ Content-Type: application/json
   "message": "Halo, ini pesan test dari WhatsApp Gateway!"
 }
 
+### 4b. Send Text Message (cURL equivalent)
+# curl -X POST http://localhost:5000/send-message \
+#   -H "Content-Type: application/json" \
+#   -d '{"number": "6281234567890", "message": "Hello from cURL!"}'
+
 ### 5. Send Message with Media (Image)
-POST http://localhost:5000/send-message
+POST {{baseUrl}}/send-message
 Content-Type: application/json
 
 {
@@ -34,7 +46,7 @@ Content-Type: application/json
 }
 
 ### 6. Send Group Message
-POST http://localhost:5000/send-group-message
+POST {{baseUrl}}/send-group-message
 Content-Type: application/json
 
 {
@@ -42,14 +54,14 @@ Content-Type: application/json
   "message": "Halo grup! Ini pesan dari Gateway."
 }
 
-### 7. Get All Chats
-GET http://localhost:5000/chats
+### 7. Get All Chats (untuk mendapatkan group_id)
+GET {{baseUrl}}/chats
 
-### 8. Logout
-POST http://localhost:5000/logout
+### 8. Logout WhatsApp
+POST {{baseUrl}}/logout
 
 ### 9. Webhook Test (biasanya dipanggil otomatis)
-POST http://localhost:5000/webhook
+POST {{baseUrl}}/webhook
 Content-Type: application/json
 
 {
@@ -60,3 +72,24 @@ Content-Type: application/json
   "type": "chat",
   "hasMedia": false
 }
+
+### ========================================
+### cURL Examples (Copy & Paste ke Terminal)
+### ========================================
+
+### Health Check
+# curl http://localhost:5000/health
+
+### Get QR Code (SSH/Terminal)
+# curl http://localhost:5000/qr/terminal
+
+### Send Message
+# curl -X POST http://localhost:5000/send-message \
+#   -H "Content-Type: application/json" \
+#   -d '{"number": "6281234567890", "message": "Hello from cURL!"}'
+
+### Check Status
+# curl http://localhost:5000/status
+
+### Get Chats
+# curl http://localhost:5000/chats

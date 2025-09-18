@@ -1,17 +1,20 @@
 #!/bin/bash
 
-# WhatsApp Gateway Setup Script
-# This script helps setup the Docker environment
+# WhatsApp Gateway One-Time Setup Script
+# Untuk penggunaan sehari-hari, gunakan: ./wa-gateway.sh
 
-echo "🚀 WhatsApp Gateway Docker Setup"
-echo "================================="
+echo "🚀 WhatsApp Gateway - One Time Setup"
+echo "====================================="
 echo ""
-echo "🔧 Current Configuration:"
+echo "ℹ️  Script ini hanya perlu dijalankan sekali untuk setup awal."
+echo "ℹ️  Setelah setup, gunakan ./wa-gateway.sh untuk penggunaan sehari-hari."
+echo ""
+echo "🔧 Configuration:"
 echo "   PORT: ${PORT:-5000} (default)"
 echo "   NODE_ENV: ${NODE_ENV:-production} (default)"
 echo "   DEBUG: ${DEBUG:-false} (default)"
 echo ""
-echo "💡 To use custom port: PORT=8080 $0"
+echo "💡 Custom port: PORT=8080 $0"
 echo ""
 
 # Colors for output
@@ -116,17 +119,23 @@ start_app() {
         echo "=================="
         echo ""
         local port=${PORT:-5000}
+        echo "🎉 Setup Berhasil!"
+        echo "=================="
+        echo ""
         echo "📱 Next Steps:"
-        echo "1. Open: http://localhost:$port/qr"
-        echo "2. Scan QR code with your WhatsApp"
-        echo "3. Start sending messages!"
+        echo "1. Lihat QR Code: ./wa-gateway.sh qr"
+        echo "2. Scan dengan WhatsApp di ponsel"
+        echo "3. Mulai kirim pesan via API!"
         echo ""
-        echo "📋 Useful Commands:"
-        echo "   docker-compose logs -f    # View logs"
-        echo "   docker-compose stop       # Stop application"
-        echo "   docker-compose restart    # Restart application"
+        echo "🛠️  Management Commands:"
+        echo "   ./wa-gateway.sh status    # Lihat status"
+        echo "   ./wa-gateway.sh logs      # Lihat logs"
+        echo "   ./wa-gateway.sh stop      # Stop gateway"
+        echo "   ./wa-gateway.sh help      # Bantuan lengkap"
         echo ""
-        echo "🔗 API Documentation: http://localhost:$port/health"
+        echo "🔗 URLs:"
+        echo "   Health: http://localhost:$port/health"
+        echo "   QR Web: http://localhost:$port/qr"
     else
         print_error "Failed to start WhatsApp Gateway"
         exit 1

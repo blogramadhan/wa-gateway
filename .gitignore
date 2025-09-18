@@ -6,6 +6,10 @@ bun.lockb
 .wwebjs_auth/
 .wwebjs_cache/
 
+# QR Code files
+qr-code.txt
+*.qr.txt
+
 # Environment variables
 .env
 .env.local
