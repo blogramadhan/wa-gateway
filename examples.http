@@ -1,0 +1,62 @@
+### WhatsApp Gateway API Examples
+### Gunakan file ini dengan REST Client extension di VS Code
+
+### 1. Health Check
+GET http://localhost:5000/health
+
+### 2. Check Connection Status
+GET http://localhost:5000/status
+
+### 3. Get QR Code
+GET http://localhost:5000/qr
+
+### 4. Send Text Message
+POST http://localhost:5000/send-message
+Content-Type: application/json
+
+{
+  "number": "6281234567890",
+  "message": "Halo, ini pesan test dari WhatsApp Gateway!"
+}
+
+### 5. Send Message with Media (Image)
+POST http://localhost:5000/send-message
+Content-Type: application/json
+
+{
+  "number": "6281234567890",
+  "message": "Ini gambar untuk Anda",
+  "media": {
+    "data": "/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=",
+    "mimetype": "image/jpeg",
+    "filename": "test.jpg"
+  }
+}
+
+### 6. Send Group Message
+POST http://localhost:5000/send-group-message
+Content-Type: application/json
+
+{
+  "group_id": "1234567890-1234567890@g.us",
+  "message": "Halo grup! Ini pesan dari Gateway."
+}
+
+### 7. Get All Chats
+GET http://localhost:5000/chats
+
+### 8. Logout
+POST http://localhost:5000/logout
+
+### 9. Webhook Test (biasanya dipanggil otomatis)
+POST http://localhost:5000/webhook
+Content-Type: application/json
+
+{
+  "from": "6281234567890@c.us",
+  "to": "status@broadcast",
+  "body": "Test webhook message",
+  "timestamp": 1640995200,
+  "type": "chat",
+  "hasMedia": false
+}
