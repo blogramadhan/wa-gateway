@@ -75,9 +75,19 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:${PORT:-5000}/health || exit 1
 
 # Create non-root user for security
-RUN groupadd -r wagateway && useradd -r -g wagateway -s /bin/false wagateway
+RUN groupadd -r wagateway && useradd -r -g wagateway -s /bin/bash -m wagateway
 RUN chown -R wagateway:wagateway /app
+
+# Create necessary directories for Chrome
+RUN mkdir -p /home/wagateway/.local/share/applications && \
+    mkdir -p /home/wagateway/.config && \
+    chown -R wagateway:wagateway /home/wagateway
+
+# Switch to non-root user
 USER wagateway
+
+# Set Chrome flags for container environment
+ENV CHROME_FLAGS="--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage --disable-accelerated-2d-canvas --no-first-run --no-zygote --single-process --disable-gpu --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-renderer-backgrounding --disable-features=TranslateUI"
 
 # Start the application
 CMD ["bun", "run", "index.ts"]

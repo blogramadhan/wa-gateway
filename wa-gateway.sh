@@ -57,9 +57,13 @@ check_docker() {
 
 # Function to check if docker-compose is available
 check_docker_compose() {
-    if ! command -v docker-compose &> /dev/null; then
-        print_error "docker-compose tidak ditemukan!"
-        echo "Pastikan docker-compose sudah terinstall."
+    if command -v docker-compose &> /dev/null; then
+        DOCKER_COMPOSE_CMD="docker-compose"
+    elif docker compose version &> /dev/null; then
+        DOCKER_COMPOSE_CMD="docker compose"
+    else
+        print_error "docker-compose atau docker compose tidak ditemukan!"
+        echo "Pastikan Docker Compose sudah terinstall."
         exit 1
     fi
 }
@@ -129,7 +133,7 @@ start_gateway() {
     export PORT=$port
     
     # Start with docker-compose
-    if docker-compose up -d; then
+    if $DOCKER_COMPOSE_CMD up -d; then
         print_success "WhatsApp Gateway berhasil dimulai!"
         
         # Wait a moment for container to be ready
@@ -140,7 +144,7 @@ start_gateway() {
         echo "QR Code akan muncul dalam beberapa detik. Pilih salah satu cara:"
         echo ""
         echo "1️⃣  Lihat logs (QR akan muncul di sini):"
-        echo "   docker-compose logs -f"
+        echo "   $DOCKER_COMPOSE_CMD logs -f"
         echo ""
         echo "2️⃣  Akses via terminal:"
         echo "   curl http://localhost:$port/qr/terminal"
@@ -163,7 +167,7 @@ stop_gateway() {
     print_header
     print_step "Menghentikan WhatsApp Gateway..."
     
-    if docker-compose down; then
+    if $DOCKER_COMPOSE_CMD down; then
         print_success "WhatsApp Gateway berhasil dihentikan!"
     else
         print_error "Gagal menghentikan WhatsApp Gateway!"
@@ -176,7 +180,7 @@ restart_gateway() {
     print_header
     print_step "Merestart WhatsApp Gateway..."
     
-    docker-compose restart
+    $DOCKER_COMPOSE_CMD restart
     print_success "WhatsApp Gateway berhasil direstart!"
 }
 
@@ -187,7 +191,7 @@ show_logs() {
     print_info "Tekan Ctrl+C untuk keluar"
     echo ""
     
-    docker-compose logs -f
+    $DOCKER_COMPOSE_CMD logs -f
 }
 
 # Function to clean up
@@ -200,7 +204,7 @@ cleanup() {
     echo
     
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-        docker-compose down -v --rmi local --remove-orphans
+        $DOCKER_COMPOSE_CMD down -v --rmi local --remove-orphans
         docker volume prune -f
         
         # Remove QR code file if exists
@@ -246,7 +250,7 @@ restore_session() {
     print_step "Restore session WhatsApp dari: $backup_file"
     
     # Stop gateway first
-    docker-compose down
+    $DOCKER_COMPOSE_CMD down
     
     # Create volume if not exists
     docker volume create wa_session_data
@@ -264,10 +268,10 @@ update_gateway() {
     print_step "Update WhatsApp Gateway..."
     
     # Pull latest images
-    docker-compose pull
+    $DOCKER_COMPOSE_CMD pull
     
     # Rebuild and restart
-    docker-compose up -d --build
+    $DOCKER_COMPOSE_CMD up -d --build
     
     print_success "WhatsApp Gateway berhasil diupdate!"
 }

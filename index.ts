@@ -80,8 +80,16 @@ class WhatsAppGateway {
           '--no-first-run',
           '--no-zygote',
           '--single-process',
-          '--disable-gpu'
-        ]
+          '--disable-gpu',
+          '--disable-background-timer-throttling',
+          '--disable-backgrounding-occluded-windows',
+          '--disable-renderer-backgrounding',
+          '--disable-features=TranslateUI',
+          '--disable-ipc-flooding-protection',
+          '--disable-web-security',
+          '--disable-features=VizDisplayCompositor'
+        ],
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined
       }
     });
 
